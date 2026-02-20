@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude Code · Enterprise Dev Flow 2026</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap');
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #16161f;
+    --border: #1e1e2e;
+    --accent: #d97706;
+    --accent2: #f59e0b;
+    --gold: #fbbf24;
+    --text: #e8e6e3;
+    --muted: #6b6880;
+    --claude: #cc785c;
+    --green: #34d399;
+    --red: #f87171;
+    --blue: #60a5fa;
+    --purple: #a78bfa;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+
+  /* Grain overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 999;
+    opacity: 0.4;
+  }
+
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 2rem 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background: rgba(10,10,15,0.95);
+    backdrop-filter: blur(12px);
+    z-index: 100;
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.1rem;
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .logo-dot { 
+    width: 8px; height: 8px; 
+    border-radius: 50%; 
+    background: var(--claude);
+    box-shadow: 0 0 12px var(--claude);
+  }
+
+  .badge {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 0.25rem 0.75rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .hero {
+    padding: 5rem 3rem 4rem;
+    max-width: 900px;
+  }
+
+  .hero-tag {
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .hero-tag::before {
+    content: '';
+    display: inline-block;
+    width: 24px;
+    height: 1px;
+    background: var(--accent);
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    margin-bottom: 1.5rem;
+  }
+
+  h1 span { color: var(--claude); }
+
+  .hero-desc {
+    color: var(--muted);
+    max-width: 600px;
+    font-size: 0.85rem;
+    line-height: 1.8;
+  }
+
+  .main {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    min-height: 100vh;
+  }
+
+  .sidebar {
+    border-right: 1px solid var(--border);
+    padding: 2rem 1.5rem;
+    position: sticky;
+    top: 73px;
+    height: calc(100vh - 73px);
+    overflow-y: auto;
+  }
+
+  .sidebar-section {
+    margin-bottom: 2rem;
+  }
+
+  .sidebar-label {
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.75rem;
+  }
+
+  .sidebar a {
+    display: block;
+    color: var(--text);
+    text-decoration: none;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.75rem;
+    border-left: 2px solid transparent;
+    transition: all 0.15s;
+    opacity: 0.6;
+  }
+
+  .sidebar a:hover {
+    border-left-color: var(--accent);
+    color: var(--accent);
+    opacity: 1;
+    padding-left: 0.75rem;
+  }
+
+  .content {
+    padding: 2rem 3rem 5rem;
+    max-width: 820px;
+  }
+
+  .phase {
+    margin-bottom: 3.5rem;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .phase-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.25rem;
+    margin-bottom: 1.75rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .phase-num {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 2rem;
+    color: var(--border);
+    line-height: 1;
+    min-width: 3rem;
+  }
+
+  .phase-meta h2 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1.25rem;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.25rem;
+  }
+
+  .phase-meta p {
+    color: var(--muted);
+    font-size: 0.75rem;
+  }
+
+  .phase-badge {
+    margin-left: auto;
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.6rem;
+    border: 1px solid;
+  }
+
+  .badge-local { border-color: var(--purple); color: var(--purple); }
+  .badge-review { border-color: var(--blue); color: var(--blue); }
+  .badge-ci { border-color: var(--green); color: var(--green); }
+  .badge-deploy { border-color: var(--accent); color: var(--accent); }
+  .badge-post { border-color: var(--red); color: var(--red); }
+
+  .steps {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .step {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 1.25rem 1.5rem;
+    position: relative;
+    transition: border-color 0.2s;
+  }
+
+  .step:hover { border-color: var(--accent); }
+
+  .step-num {
+    position: absolute;
+    top: -1px;
+    right: -1px;
+    background: var(--border);
+    color: var(--muted);
+    font-size: 0.6rem;
+    padding: 0.15rem 0.4rem;
+    letter-spacing: 0.1em;
+  }
+
+  .step h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 0.6rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .step h3 .icon { font-size: 1rem; }
+
+  .step p {
+    color: var(--muted);
+    font-size: 0.75rem;
+    line-height: 1.7;
+    margin-bottom: 0.75rem;
+  }
+
+  .code-block {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 0.75rem 1rem;
+    font-size: 0.7rem;
+    overflow-x: auto;
+    white-space: pre;
+    color: var(--green);
+    line-height: 1.6;
+  }
+
+  .cmd { color: var(--blue); }
+  .comment { color: var(--muted); }
+  .flag { color: var(--accent2); }
+  .str { color: var(--claude); }
+
+  .tool-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-top: 1rem;
+  }
+
+  .tool-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 1rem;
+    transition: all 0.2s;
+  }
+
+  .tool-card:hover {
+    border-color: var(--accent);
+    background: var(--surface2);
+  }
+
+  .tool-card .tool-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .tool-card p {
+    font-size: 0.68rem;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .tag {
+    display: inline-block;
+    font-size: 0.58rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.1rem 0.4rem;
+    margin-left: 0.25rem;
+  }
+
+  .tag-ai { background: rgba(204,120,92,0.15); color: var(--claude); }
+  .tag-new { background: rgba(52,211,153,0.12); color: var(--green); }
+
+  .flow-diagram {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin: 1.5rem 0;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+  }
+
+  .flow-node {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 0.5rem 0.75rem;
+    font-size: 0.65rem;
+    text-align: center;
+    min-width: 90px;
+    white-space: nowrap;
+    letter-spacing: 0.05em;
+  }
+
+  .flow-arrow {
+    color: var(--accent);
+    padding: 0 0.25rem;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+  }
+
+  .flow-node.active {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .callout {
+    border-left: 2px solid var(--accent);
+    padding: 0.75rem 1rem;
+    background: rgba(217,119,6,0.06);
+    font-size: 0.72rem;
+    color: var(--text);
+    margin: 1rem 0;
+  }
+
+  .callout strong { color: var(--accent); }
+
+  .section-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2.5rem 0;
+  }
+
+  .post-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.75rem;
+    margin-top: 1rem;
+  }
+
+  .post-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 1rem;
+  }
+
+  .post-card .cat {
+    font-size: 0.58rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+
+  .cat-observe { color: var(--blue); }
+  .cat-debug { color: var(--red); }
+  .cat-recover { color: var(--green); }
+
+  .post-card h4 {
+    font-family: 'Syne', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+  }
+
+  .post-card p {
+    font-size: 0.68rem;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+
+  .post-card ul {
+    list-style: none;
+    margin-top: 0.5rem;
+  }
+
+  .post-card ul li {
+    font-size: 0.65rem;
+    color: var(--muted);
+    padding: 0.15rem 0;
+    padding-left: 0.75rem;
+    position: relative;
+  }
+
+  .post-card ul li::before {
+    content: '›';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+  }
+
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 1.5rem 3rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--muted);
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+  }
+
+  @media (max-width: 768px) {
+    .main { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+    .post-grid { grid-template-columns: 1fr; }
+    .tool-grid { grid-template-columns: 1fr; }
+    header { padding: 1.25rem 1.5rem; }
+    .content { padding: 1.5rem; }
+    .hero { padding: 3rem 1.5rem 2rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-dot"></div>
+    Claude Code · Enterprise
+  </div>
+  <div class="badge">Manual 2026 · v1.0</div>
+</header>
+
+<div class="hero">
+  <div class="hero-tag">Flujo de Desarrollo Enterprise</div>
+  <h1>Deploy a producción<br>con <span>Claude Code</span></h1>
+  <p class="hero-desc">Manual paso a paso para equipos enterprise: desde el desarrollo local con AI hasta el monitoreo post-producción. Incluye herramientas de observabilidad, debugging y recuperación de incidentes.</p>
+</div>
+
+<!-- PIPELINE VISUAL -->
+<div style="padding: 0 3rem 2rem; border-bottom: 1px solid var(--border);">
+  <div class="flow-diagram">
+    <div class="flow-node active">Local + Claude</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node">PR + Review</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node">CI / Gates</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node">Staging</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node">Prod Deploy</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node">Observe</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node">Incident</div>
+  </div>
+</div>
+
+<div class="main">
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Flujo de Desarrollo</div>
+      <a href="#fase1">01 · Setup Local</a>
+      <a href="#fase2">02 · Desarrollo con Claude</a>
+      <a href="#fase3">03 · Code Review + PR</a>
+      <a href="#fase4">04 · CI / Quality Gates</a>
+      <a href="#fase5">05 · Staging & Testing</a>
+      <a href="#fase6">06 · Deploy a Producción</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Post-Producción</div>
+      <a href="#observabilidad">Observabilidad</a>
+      <a href="#debugging">Debugging</a>
+      <a href="#incidentes">Gestión Incidentes</a>
+      <a href="#recuperacion">Recuperación</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Referencia</div>
+      <a href="#comandos">Comandos Clave</a>
+      <a href="#checklist">Checklist Deploy</a>
+    </div>
+  </nav>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- FASE 1 -->
+    <div class="phase" id="fase1">
+      <div class="phase-header">
+        <div class="phase-num">01</div>
+        <div class="phase-meta">
+          <h2>Setup del Entorno Local</h2>
+          <p>Configuración inicial de Claude Code y herramientas enterprise</p>
+        </div>
+        <div class="phase-badge badge-local">LOCAL</div>
+      </div>
+
+      <div class="steps">
+        <div class="step">
+          <span class="step-num">STEP 1.1</span>
+          <h3><span class="icon">⚙</span> Instalar y autenticar Claude Code</h3>
+          <p>Claude Code es el CLI oficial de Anthropic para desarrollo con IA. Requiere Node.js 18+ y acceso a la API de Anthropic o plan Teams/Enterprise.</p>
+          <div class="code-block"><span class="comment"># Instalación global</span>
+<span class="cmd">npm</span> install <span class="flag">-g</span> @anthropic-ai/claude-code
+
+<span class="comment"># Autenticación (SSO enterprise disponible)</span>
+<span class="cmd">claude</span> auth login <span class="flag">--enterprise</span>
+
+<span class="comment"># Verificar versión</span>
+<span class="cmd">claude</span> <span class="flag">--version</span></div>
+        </div>
+
+        <div class="step">
+          <span class="step-num">STEP 1.2</span>
+          <h3><span class="icon">📋</span> Configurar CLAUDE.md en el repositorio</h3>
+          <p>El archivo CLAUDE.md define el contexto del proyecto para Claude Code. Es como un "system prompt" para el repositorio entero. Crítico en entornos enterprise para mantener convenciones.</p>
+          <div class="code-block"><span class="comment"># Crear CLAUDE.md en la raíz del repo</span>
+<span class="str"># Ejemplo de estructura:</span>
+
+<span class="comment">## Proyecto</span>
+- Stack: Next.js 15, TypeScript, PostgreSQL
+- Arquitectura: microservicios con API Gateway
+- Convenciones: ESLint + Prettier (ver .eslintrc)
+
+<span class="comment">## Comandos frecuentes</span>
+- <span class="cmd">npm run dev</span>      → servidor local
+- <span class="cmd">npm run test</span>     → tests unitarios
+- <span class="cmd">npm run e2e</span>      → tests end-to-end
+
+<span class="comment">## Reglas críticas</span>
+- Nunca commitear secrets ni .env
+- Toda API pública requiere autenticación JWT
+- Migraciones de BD siempre reversibles</div>
+        </div>
+
+        <div class="step">
+          <span class="step-num">STEP 1.3</span>
+          <h3><span class="icon">🔒</span> Configurar permisos y políticas enterprise</h3>
+          <p>En entornos enterprise, configura políticas de seguridad para Claude Code: qué comandos puede ejecutar, límites de acceso a archivos y conexiones de red.</p>
+          <div class="code-block"><span class="comment"># ~/.claude/settings.json (configuración de usuario)</span>
+{
+  <span class="str">"permissions"</span>: {
+    <span class="str">"allow"</span>: [<span class="str">"Bash(git:*)"</span>, <span class="str">"Bash(npm:*)"</span>, <span class="str">"Read"</span>, <span class="str">"Write"</span>],
+    <span class="str">"deny"</span>: [<span class="str">"Bash(curl:*)"</span>, <span class="str">"Bash(wget:*)"</span>]
+  },
+  <span class="str">"mcpServers"</span>: {
+    <span class="str">"github"</span>: { <span class="str">"command"</span>: <span class="str">"npx @modelcontextprotocol/server-github"</span> },
+    <span class="str">"jira"</span>:   { <span class="str">"command"</span>: <span class="str">"npx @modelcontextprotocol/server-jira"</span> }
+  }
+}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FASE 2 -->
+    <div class="phase" id="fase2">
+      <div class="phase-header">
+        <div class="phase-num">02</div>
+        <div class="phase-meta">
+          <h2>Desarrollo con Claude Code</h2>
+          <p>Flujo de trabajo AI-first: cómo usar Claude Code efectivamente en el día a día</p>
+        </div>
+        <div class="phase-badge badge-local">DEVELOP</div>
+      </div>
+
+      <div class="steps">
+        <div class="step">
+          <span class="step-num">STEP 2.1</span>
+          <h3><span class="icon">🌿</span> Crear feature branch desde ticket</h3>
+          <p>Claude Code puede leer el contexto del ticket de Jira o GitHub Issues directamente via MCP y crear la branch con el naming correcto automáticamente.</p>
+          <div class="code-block"><span class="comment"># Claude Code puede hacer esto por ti:</span>
+<span class="cmd">claude</span> <span class="str">"Crea una branch para el ticket PROJ-1234, 
+implementa la feature de autenticación 2FA 
+según los criterios de aceptación del ticket"</span>
+
+<span class="comment"># Claude leerá el ticket via MCP, creará la branch:</span>
+<span class="comment"># feature/PROJ-1234-implement-2fa-authentication</span>
+<span class="comment"># y comenzará a implementar con contexto completo</span></div>
+        </div>
+
+        <div class="step">
+          <span class="step-num">STEP 2.2</span>
+          <h3><span class="icon">💻</span> Desarrollo iterativo con Claude</h3>
+          <p>Claude Code trabaja en modo agentic: lee archivos, escribe código, ejecuta tests y itera. Usa el modo <code>--continue</code> para tareas largas y <code>--ultrathink</code> para problemas complejos.</p>
+          <div class="code-block"><span class="comment"># Modo interactivo (lo más común)</span>
+<span class="cmd">claude</span>
+
+<span class="comment"># Modo no-interactivo para CI o scripts</span>
+<span class="cmd">claude</span> <span class="flag">-p</span> <span class="str">"Añade tests unitarios para AuthService"</span>
+
+<span class="comment"># Tarea extensa con pensamiento profundo</span>
+<span class="cmd">claude</span> <span class="flag">--ultrathink</span> <span class="str">"Refactoriza el módulo de pagos 
+para soportar múltiples providers sin romper API"</span>
+
+<span class="comment"># Continuar sesión anterior</span>
+<span class="cmd">claude</span> <span class="flag">--continue</span></div>
+        </div>
+
+        <div class="step">
+          <span class="step-num">STEP 2.3</span>
+          <h3><span class="icon">✅</span> Tests antes de commitear</h3>
+          <p>Claude Code debe ejecutar los tests automáticamente y corregir los fallos antes de proponer el commit. Establece esta regla en CLAUDE.md.</p>
+          <div class="code-block"><span class="comment"># Claude ejecuta y corrige hasta pasar:</span>
+<span class="cmd">npm</span> run test <span class="flag">--coverage</span>
+<span class="cmd">npm</span> run lint
+<span class="cmd">npm</span> run type-check
+
+<span class="comment"># Solo luego commitea con mensaje convencional:</span>
+<span class="cmd">git</span> commit <span class="flag">-m</span> <span class="str">"feat(auth): implement TOTP-based 2FA [PROJ-1234]"</span></div>
+        </div>
+
+        <div class="callout">
+          <strong>Buena práctica enterprise:</strong> Configura en CLAUDE.md que Claude siempre escriba tests para el código nuevo. Coverage mínimo 80%. Sin tests = sin commit.
+        </div>
+      </div>
+    </div>
+
+    <!-- FASE 3 -->
+    <div class="phase" id="fase3">
+      <div class="phase-header">
+        <div class="phase-num">03</div>
+        <div class="phase-meta">
+          <h2>Code Review & Pull Request</h2>
+          <p>Review automatizado + revisión humana obligatoria para enterprise</p>
+        </div>
+        <div class="phase-badge badge-review">REVIEW</div>
+      </div>
+
+      <div class="steps">
+        <div class="step">
+          <span class="step-num">STEP 3.1</span>
+          <h3><span class="icon">📝</span> Crear PR con descripción automática</h3>
+          <p>Claude Code genera el PR con descripción completa, cambios, impacto y testing realizado. Conecta automáticamente con el ticket.</p>
+          <div class="code-block"><span class="cmd">claude</span> <span class="str">"Crea un PR para esta branch con descripción completa.
+Incluye: resumen de cambios, cómo testear, 
+checklist de seguridad y link al ticket PROJ-1234"</span>
+
+<span class="comment"># Claude usará MCP de GitHub para crear el PR</span>
+<span class="comment"># con template enterprise si existe en .github/</span></div>
+        </div>
+
+        <div class="step">
+          <span class="step-num">STEP 3.2</span>
+          <h3><span class="icon">🤖</span> Review automático con Claude</h3>
+          <p>Configura Claude Code como reviewer automático en GitHub Actions. Analiza seguridad, performance, convenciones y lógica de negocio antes del review humano.</p>
+          <div class="code-block"><span class="comment"># .github/workflows/claude-review.yml</span>
+name: Claude Code Review
+on: [pull_request]
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Claude Review
+        uses: anthropics/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          review_type: <span class="str">"security,performance,conventions"</span></div>
+        </div>
+
+        <div class="step">
+          <span class="step-num">STEP 3.3</span>
+          <h3><span class="icon">👥</span> Review humano obligatorio (mínimo 2 approvals)</h3>
+          <p>El review de Claude no reemplaza el humano. En enterprise: mínimo 2 approvals de humanos, incluyendo 1 del tech lead o arquitecto. Configura branch protection rules.</p>
+          <div class="code-block"><span class="comment"># Branch protection en GitHub (vía API o UI):</span>
+required_pull_request_reviews:
+  required_approving_review_count: 2
+  require_code_owner_reviews: true
+  dismiss_stale_reviews: true
+
+required_status_checks:
+  strict: true
+  contexts: [<span class="str">"ci/tests"</span>, <span class="str">"ci/security"</span>, <span class="str">"claude-review"</span>]</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FASE 4 -->
+    <div class="phase" id="fase4">
+      <div class="phase-header">
+        <div class="phase-num">04</div>
+        <div class="phase-meta">
+          <h2>CI / Quality Gates</h2>
+          <p>Pipeline automatizado con gates estrictos antes de staging</p>
+        </div>
+        <div class="phase-badge badge-ci">CI/CD</div>
+      </div>
+
+      <div class="steps">
+        <div class="step">
+          <span class="step-num">STEP 4.1</span>
+          <h3><span class="icon">🔍</span> Quality Gates automáticos</h3>
+          <p>El pipeline bloquea el merge si algún gate falla. Claude Code puede usarse en CI para auto-reparar fallos menores de lint y formatting.</p>
+          <div class="code-block"><span class="comment"># Gates que deben pasar (todos obligatorios):</span>
+
+✓ Unit tests             → cobertura ≥ 80%
+✓ Integration tests      → todos pasan
+✓ E2E tests (Playwright) → smoke suite
+✓ Linting (ESLint)       → 0 errores
+✓ Type check (TypeScript)→ 0 errores  
+✓ SAST (Semgrep/Snyk)    → 0 high/critical
+✓ Dependencias (Snyk)    → 0 vulnerabilidades críticas
+✓ DAST (OWASP ZAP)       → básico en staging
+✓ Bundle size            → no regresión > 5%
+✓ Performance (Lighthouse)→ score ≥ 90</div>
+        </div>
+
+        <div class="step">
+          <span class="step-num">STEP 4.2</span>
+          <h3><span class="icon">🛡</span> Security scanning enterprise</h3>
+          <p>En 2026, el SAST con IA detecta vulnerabilidades contextuales que los scanners tradicionales no detectan. Claude puede analizar el diff del PR específicamente.</p>
+          <div class="code-block"><span class="comment"># Herramientas de seguridad en CI enterprise:</span>
+
+<span class="str">Snyk</span>           → vulnerabilidades en dependencias
+<span class="str">Semgrep</span>        → SAST con reglas personalizadas
+<span class="str">Trivy</span>          → vulnerabilidades en containers
+<span class="str">GitLeaks</span>       → detección de secrets en código
+<span class="str">OWASP ZAP</span>      → DAST automático en staging
+<span class="str">Claude Code</span>    → análisis semántico de seguridad</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FASE 5 -->
+    <div class="phase" id="fase5">
+      <div class="phase-header">
+        <div class="phase-num">05</div>
+        <div class="phase-meta">
+          <h2>Staging & Testing Final</h2>
+          <p>Validación en ambiente idéntico a producción antes del deploy</p>
+        </div>
+        <div class="phase-badge badge-ci">STAGING</div>
+      </div>
+
+      <div class="steps">
+        <div class="step">
+          <span class="step-num">STEP 5.1</span>
+          <h3><span class="icon">🔬</span> Deploy a staging automático</h3>
+          <p>Al hacer merge a <code>main</code>, el deploy a staging debe ser automático e inmediato. Staging debe tener datos anonimizados de producción (not synthetic data).</p>
+          <div class="code-block"><span class="comment"># El pipeline despliega a staging automáticamente:</span>
+<span class="cmd">kubectl</span> apply <span class="flag">-f</span> k8s/staging/ <span class="flag">--namespace</span> staging
+<span class="cmd">kubectl</span> rollout status deployment/app <span class="flag">-n</span> staging
+
+<span class="comment"># Smoke tests automáticos post-deploy:</span>
+<span class="cmd">npm</span> run test:e2e <span class="flag">--env</span> staging
+<span class="cmd">k6</span> run load-tests/smoke.js <span class="flag">--env</span> STAGING_URL</div>
+        </div>
+
+        <div class="step">
+          <span class="step-num">STEP 5.2</span>
+          <h3><span class="icon">✋</span> Aprobación manual para producción</h3>
+          <p>El deploy a producción requiere aprobación explícita en la plataforma de CI/CD. En GitHub Actions: <code>environment: production</code> con reviewers requeridos.</p>
+          <div class="code-block"><span class="comment"># En GitHub Actions workflow:</span>
+deploy-production:
+  needs: [staging-validation]
+  environment:
+    name: production
+    url: https://app.empresa.com
+  <span class="str"># Requiere aprobación de: Lead Engineer + QA Lead</span>
+  steps:
+    - name: Deploy to Production
+      run: <span class="cmd">./scripts/deploy-prod.sh</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FASE 6 -->
+    <div class="phase" id="fase6">
+      <div class="phase-header">
+        <div class="phase-num">06</div>
+        <div class="phase-meta">
+          <h2>Deploy a Producción</h2>
+          <p>Estrategias seguras: canary, blue-green, feature flags</p>
+        </div>
+        <div class="phase-badge badge-deploy">PROD</div>
+      </div>
+
+      <div class="steps">
+        <div class="step">
+          <span class="step-num">STEP 6.1</span>
+          <h3><span class="icon">🐤</span> Canary deployment (recomendado enterprise)</h3>
+          <p>Despliega primero al 5% del tráfico, monitorea métricas durante 15-30 minutos, luego escala al 100% o rollback automático si hay anomalías.</p>
+          <div class="code-block"><span class="comment"># Con Argo Rollouts (Kubernetes):</span>
+strategy:
+  canary:
+    steps:
+    - setWeight: 5    <span class="comment"># 5% del tráfico</span>
+    - pause: {duration: 15m}
+    - setWeight: 25
+    - pause: {duration: 10m}
+    - setWeight: 50
+    - pause: {duration: 10m}
+    - setWeight: 100
+    analysis:
+      successCondition: <span class="str">"result[0] &lt; 0.01"</span>  <span class="comment"># error rate</span></div>
+        </div>
+
+        <div class="step">
+          <span class="step-num">STEP 6.2</span>
+          <h3><span class="icon">🚩</span> Feature flags para rollout controlado</h3>
+          <p>Los feature flags permiten separar el deploy del release. Puedes tener el código en producción pero la feature desactivada, activarla gradualmente y hacer rollback instantáneo sin redeploy.</p>
+          <div class="code-block"><span class="comment"># Herramientas: LaunchDarkly, Unleash, Flipt (OSS)</span>
+
+<span class="comment"># En código (ejemplo con Unleash):</span>
+const isEnabled = await unleash.isEnabled(
+  <span class="str">'new-2fa-feature'</span>,
+  { userId: user.id, country: user.country }
+);
+
+<span class="comment"># Rollout gradual desde consola:</span>
+<span class="comment"># 0% → 5% → 25% → 50% → 100%</span>
+<span class="comment"># Con segmentación: internal → beta → all</span></div>
+        </div>
+
+        <div class="step">
+          <span class="step-num">STEP 6.3</span>
+          <h3><span class="icon">📢</span> Comunicación post-deploy</h3>
+          <p>Notifica al equipo y stakeholders. Claude Code puede generar automáticamente el changelog y el release note basado en los commits y PRs mergeados.</p>
+          <div class="code-block"><span class="cmd">claude</span> <span class="str">"Genera release notes para la v2.4.0 
+basándote en los PRs mergeados desde v2.3.0.
+Formato: Slack + changelog técnico para docs"</span>
+
+<span class="comment"># Claude leerá el git log, PRs y tickets</span>
+<span class="comment"># para generar release notes automáticas</span></div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- POST-PRODUCCIÓN -->
+    <h2 style="font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:800;letter-spacing:-0.02em;margin-bottom:0.5rem;" id="observabilidad">Post-Producción</h2>
+    <p style="color:var(--muted);font-size:0.78rem;margin-bottom:2rem;">Herramientas para mantener, observar y resolver problemas en producción</p>
+
+    <!-- OBSERVABILIDAD -->
+    <div class="phase">
+      <div class="phase-header">
+        <div class="phase-num">07</div>
+        <div class="phase-meta">
+          <h2>Observabilidad (Stack completo)</h2>
+          <p>Logs · Métricas · Trazas · Alertas</p>
+        </div>
+        <div class="phase-badge badge-post">OBS</div>
+      </div>
+
+      <div class="post-grid">
+        <div class="post-card">
+          <div class="cat cat-observe">Métricas</div>
+          <h4>Datadog / Grafana</h4>
+          <p>Dashboards de negocio y técnicos. APM con detección de anomalías.</p>
+          <ul>
+            <li>Error rate por servicio</li>
+            <li>P50/P95/P99 latencia</li>
+            <li>Tasa de conversión</li>
+            <li>Saturación de recursos</li>
+          </ul>
+        </div>
+        <div class="post-card">
+          <div class="cat cat-observe">Logs</div>
+          <h4>Elastic Stack / Loki</h4>
+          <p>Logs estructurados (JSON). Retención 90 días. Búsqueda en tiempo real.</p>
+          <ul>
+            <li>Correlación con traces</li>
+            <li>Alertas sobre patrones</li>
+            <li>Audit logs separados</li>
+            <li>Redacción de PII</li>
+          </ul>
+        </div>
+        <div class="post-card">
+          <div class="cat cat-observe">Trazas</div>
+          <h4>Jaeger / Tempo</h4>
+          <p>Distributed tracing con OpenTelemetry. Trace ID en cada request.</p>
+          <ul>
+            <li>Latencia por span</li>
+            <li>Dependencias entre servicios</li>
+            <li>Bottlenecks de BD</li>
+            <li>Propagación de errores</li>
+          </ul>
+        </div>
+        <div class="post-card">
+          <div class="cat cat-observe">Alertas</div>
+          <h4>PagerDuty / OpsGenie</h4>
+          <p>On-call rotativo, escalamiento automático, silenciamiento inteligente.</p>
+          <ul>
+            <li>Alertas multichannel</li>
+            <li>Runbooks adjuntos</li>
+            <li>Auto-silenciar deploys</li>
+            <li>Correlación de alertas</li>
+          </ul>
+        </div>
+        <div class="post-card">
+          <div class="cat cat-observe">Sintético</div>
+          <h4>Checkly / Playwright</h4>
+          <p>Tests E2E corriendo en producción cada 5 minutos para detectar regresiones antes que los usuarios.</p>
+          <ul>
+            <li>Flujos críticos de negocio</li>
+            <li>Alertas inmediatas</li>
+            <li>Checks por región</li>
+          </ul>
+        </div>
+        <div class="post-card">
+          <div class="cat cat-observe">RUM</div>
+          <h4>Sentry / Datadog RUM</h4>
+          <p>Real User Monitoring: performance y errores desde la perspectiva del usuario real.</p>
+          <ul>
+            <li>Core Web Vitals</li>
+            <li>Session replay</li>
+            <li>Error tracking frontend</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- DEBUGGING -->
+    <div class="phase" id="debugging">
+      <div class="phase-header">
+        <div class="phase-num">08</div>
+        <div class="phase-meta">
+          <h2>Debugging con Claude Code en Producción</h2>
+          <p>Usar Claude para analizar logs, traces y proponer fixes en producción</p>
+        </div>
+        <div class="phase-badge badge-post">DEBUG</div>
+      </div>
+
+      <div class="steps">
+        <div class="step">
+          <span class="step-num">STEP 8.1</span>
+          <h3><span class="icon">🔎</span> Análisis de logs con Claude</h3>
+          <p>Claude Code puede leer logs directamente (via pipe o archivos) y encontrar la causa raíz de un error mucho más rápido que revisión manual.</p>
+          <div class="code-block"><span class="comment"># Analizar logs de las últimas 2 horas:</span>
+<span class="cmd">kubectl</span> logs deployment/api <span class="flag">--since</span> 2h | <span class="cmd">claude</span> <span class="flag">-p</span> <span class="str">"Analiza estos logs, 
+identifica errores repetitivos, 
+encuentra la causa raíz y sugiere el fix"</span>
+
+<span class="comment"># Con logs de Datadog exportados:</span>
+<span class="cmd">claude</span> <span class="flag">-p</span> <span class="str">"Lee el archivo error-logs.json y 
+haz un análisis de causa raíz del spike de errores 
+que ocurrió a las 14:32 UTC"</span> <span class="flag">--file</span> error-logs.json</div>
+        </div>
+
+        <div class="step">
+          <span class="step-num">STEP 8.2</span>
+          <h3><span class="icon">🧵</span> Análisis de distributed traces</h3>
+          <p>Cuando un request falla en microservicios, exporta el trace completo y Claude identifica en qué servicio y por qué falló.</p>
+          <div class="code-block"><span class="comment"># Exportar trace de Jaeger y analizar:</span>
+<span class="cmd">curl</span> <span class="str">"http://jaeger:16686/api/traces/{traceId}"</span> \
+  | <span class="cmd">claude</span> <span class="flag">-p</span> <span class="str">"Analiza este distributed trace. 
+El usuario reportó timeout. Identifica:
+1. En qué servicio ocurrió el cuello de botella
+2. Cuál fue la latencia de cada span
+3. Dónde está el error raíz"</span></div>
+        </div>
+
+        <div class="step">
+          <span class="step-num">STEP 8.3</span>
+          <h3><span class="icon">🐛</span> Hotfix asistido por Claude Code</h3>
+          <p>Claude propone el fix, lo testea localmente en una branch de hotfix, y genera el PR listo para deploy de emergencia.</p>
+          <div class="code-block"><span class="comment"># Crear hotfix con Claude:</span>
+<span class="cmd">git</span> checkout <span class="flag">-b</span> hotfix/PROJ-9999-payment-timeout main
+
+<span class="cmd">claude</span> <span class="str">"Hay un timeout en PaymentService.processPayment()
+cuando el amount es mayor a 10000. 
+El error es: [pegar stack trace].
+Fix el problema, mantén backward compat, 
+añade test para reproducir el bug"</span>
+
+<span class="comment"># Claude analiza el código, propone fix,</span>
+<span class="comment"># escribe el test de regresión y hace el commit</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INCIDENTES -->
+    <div class="phase" id="incidentes">
+      <div class="phase-header">
+        <div class="phase-num">09</div>
+        <div class="phase-meta">
+          <h2>Gestión de Incidentes</h2>
+          <p>Proceso estructurado para incidentes P1/P2 en producción</p>
+        </div>
+        <div class="phase-badge badge-post">INCIDENT</div>
+      </div>
+
+      <div class="steps">
+        <div class="step">
+          <span class="step-num">STEP 9.1</span>
+          <h3><span class="icon">🚨</span> Declarar incidente y comunicar (primeros 5 min)</h3>
+          <div class="code-block"><span class="comment"># P1 = producción caída / pérdida de datos
+# P2 = degradación severa / funcionalidad crítica falla
+# P3 = degradación menor / workaround disponible</span>
+
+<span class="comment"># Acciones inmediatas P1:</span>
+1. Crear canal #inc-YYYYMMDD-descripción en Slack
+2. Notificar a stakeholders via PagerDuty
+3. Designar Incident Commander (IC)
+4. Abrir documento de incidente (template)
+5. Activar status page (Statuspage.io / BetterUptime)</div>
+        </div>
+
+        <div class="step">
+          <span class="step-num">STEP 9.2</span>
+          <h3><span class="icon">🤖</span> Claude como asistente durante el incidente</h3>
+          <p>Claude puede actuar como copiloto durante el incidente: analizar síntomas, sugerir comandos de diagnóstico y proponer mitigaciones mientras el equipo actúa.</p>
+          <div class="code-block"><span class="cmd">claude</span> <span class="str">"INCIDENTE ACTIVO P1. Síntomas:
+- API retornando 503 desde hace 8 minutos
+- Error rate: 45% (normal: 0.1%)
+- Último deploy: hace 23 minutos (v2.4.0)
+- Métricas de DB: normales
+- Load balancer: saludable
+
+Sugiere los próximos 3 comandos de diagnóstico 
+más probables para identificar la causa raíz"</span></div>
+        </div>
+
+        <div class="step">
+          <span class="step-num">STEP 9.3</span>
+          <h3><span class="icon">📋</span> Post-mortem asistido por Claude</h3>
+          <p>Después del incidente (48-72h), Claude puede generar el borrador del post-mortem analizando el timeline, logs y cambios del incidente.</p>
+          <div class="code-block"><span class="cmd">claude</span> <span class="str">"Genera el post-mortem del incidente INC-2026-042.
+Tengo el timeline en incident-timeline.md,
+los logs en incident-logs.json,
+y el PR del fix en #4521.
+
+Estructura: Resumen Ejecutivo, Timeline, 
+Causa Raíz, Impacto, Mitigación, 
+Action Items (con dueños y fechas)"</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RECUPERACIÓN -->
+    <div class="phase" id="recuperacion">
+      <div class="phase-header">
+        <div class="phase-num">10</div>
+        <div class="phase-meta">
+          <h2>Recuperación y Rollback</h2>
+          <p>Cómo revertir cuando algo sale mal</p>
+        </div>
+        <div class="phase-badge badge-post">RECOVERY</div>
+      </div>
+
+      <div class="steps">
+        <div class="step">
+          <span class="step-num">STEP 10.1</span>
+          <h3><span class="icon">⏪</span> Rollback inmediato (&lt; 5 minutos)</h3>
+          <div class="code-block"><span class="comment"># Opción 1: Rollback de Kubernetes (más rápido)</span>
+<span class="cmd">kubectl</span> rollout undo deployment/api <span class="flag">-n</span> production
+<span class="cmd">kubectl</span> rollout status deployment/api <span class="flag">-n</span> production
+
+<span class="comment"># Opción 2: Deshabilitar feature flag (instantáneo)</span>
+<span class="comment"># En LaunchDarkly/Unleash: toggle → OFF</span>
+<span class="comment"># Sin redeploy, sin downtime</span>
+
+<span class="comment"># Opción 3: Revertir con Argo Rollouts</span>
+<span class="cmd">kubectl</span> argo rollouts undo rollout/api</div>
+        </div>
+
+        <div class="step">
+          <span class="step-num">STEP 10.2</span>
+          <h3><span class="icon">🗄</span> Recuperación de base de datos</h3>
+          <div class="code-block"><span class="comment"># Rollback de migración de BD:</span>
+<span class="cmd">npm</span> run db:migrate:rollback <span class="flag">--to</span> 20260215120000
+
+<span class="comment"># Point-in-time recovery (PITR) - AWS RDS:</span>
+<span class="cmd">aws</span> rds restore-db-instance-to-point-in-time \
+  <span class="flag">--source-db-instance</span> prod-db \
+  <span class="flag">--target-db-instance</span> prod-db-recovery \
+  <span class="flag">--restore-time</span> <span class="str">"2026-02-19T13:00:00Z"</span>
+
+<span class="comment"># Verificar integridad post-restore:</span>
+<span class="cmd">claude</span> <span class="str">"Ejecuta las queries de verificación de integridad 
+en la BD restaurada y reporta cualquier inconsistencia"</span></div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="section-divider">
+
+    <!-- COMANDOS RÁPIDOS -->
+    <div class="phase" id="comandos">
+      <div class="phase-header">
+        <div class="phase-num">REF</div>
+        <div class="phase-meta">
+          <h2>Comandos Claude Code más útiles</h2>
+          <p>Referencia rápida para el día a día</p>
+        </div>
+      </div>
+
+      <div class="tool-grid">
+        <div class="tool-card">
+          <div class="tool-name">claude <span class="tag tag-ai">AI</span></div>
+          <p>Modo interactivo. La forma más común de usar Claude Code en el desarrollo diario.</p>
+        </div>
+        <div class="tool-card">
+          <div class="tool-name">claude -p "prompt"</div>
+          <p>Modo no-interactivo. Ideal para scripts de CI/CD y automatizaciones.</p>
+        </div>
+        <div class="tool-card">
+          <div class="tool-name">claude --ultrathink</div>
+          <p>Thinking extendido para problemas arquitecturales complejos o refactors grandes.</p>
+        </div>
+        <div class="tool-card">
+          <div class="tool-name">claude --continue</div>
+          <p>Continúa la sesión más reciente. Útil para tareas que se extienden varias horas.</p>
+        </div>
+        <div class="tool-card">
+          <div class="tool-name">claude --resume {id}</div>
+          <p>Retoma una sesión específica por su ID. Ideal para tareas pausadas o checkpoints.</p>
+        </div>
+        <div class="tool-card">
+          <div class="tool-name">claude --dangerously-<br>skip-permissions</div>
+          <p>Solo para CI. Permite a Claude ejecutar comandos sin confirmación interactiva.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHECKLIST -->
+    <div class="phase" id="checklist">
+      <div class="phase-header">
+        <div class="phase-num">✓</div>
+        <div class="phase-meta">
+          <h2>Checklist de Deploy Enterprise</h2>
+          <p>Verifica esto antes de cada deploy a producción</p>
+        </div>
+      </div>
+
+      <div class="tool-grid">
+        <div class="tool-card" style="grid-column: span 2;">
+          <div class="code-block" style="color:var(--text);">PRE-DEPLOY
+<span class="green">□</span> Tests pasan al 100% (unit + integration + e2e)
+<span class="green">□</span> Coverage ≥ 80% en código nuevo
+<span class="green">□</span> 0 vulnerabilidades críticas (Snyk/Semgrep)
+<span class="green">□</span> 0 secrets en el código (GitLeaks)
+<span class="green">□</span> Code review aprobado (2+ humanos)
+<span class="green">□</span> Claude Code review sin bloqueantes
+<span class="green">□</span> Staging validado por QA
+<span class="green">□</span> Runbook/rollback plan documentado
+<span class="green">□</span> Alertas configuradas para nuevas métricas
+<span class="green">□</span> Feature flags configurados (si aplica)
+<span class="green">□</span> DB migration testeada con backup previo
+<span class="green">□</span> Ventana de deploy comunicada al equipo
+
+POST-DEPLOY (primeros 30 min)
+<span class="accent2">□</span> Error rate normal (&lt; 0.1%)
+<span class="accent2">□</span> Latencia P99 sin regresión
+<span class="accent2">□</span> Logs sin errores inesperados
+<span class="accent2">□</span> Tests sintéticos pasando
+<span class="accent2">□</span> Canary rollout completado sin anomalías
+<span class="accent2">□</span> Stakeholders notificados</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  <div>CLAUDE CODE · ENTERPRISE MANUAL · 2026</div>
+  <div style="color:var(--claude);">Anthropic · Claude Sonnet 4.6</div>
+</footer>
+
+</body>
+</html>
